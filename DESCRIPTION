@@ -1,0 +1,16 @@
+Package: pseudoloss
+Type: Package
+Title: Loss Functions for Pseudo Observations
+Version: 0.1.0
+Author: Michael C Sachs
+Maintainer: Michael C Sachs <sachsmc@gmail.com>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    pseudo,
+    survival
+Suggests: 
+    testthat
