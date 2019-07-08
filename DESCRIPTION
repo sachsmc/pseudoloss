@@ -4,13 +4,25 @@ Title: Loss Functions for Pseudo Observations
 Version: 0.1.0
 Author: Michael C Sachs
 Maintainer: Michael C Sachs <sachsmc@gmail.com>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Utilities for optimization and prediction of the cumulative incidence 
+        of a possibly right-censored event history endpoint at a fixed time horizon. 
+        Pseudo-observations are a way to deal with censored event history data,
+        such as standard survival endpoints, competing risks, and general multi-state
+        models. By pre-processing the censored observations, they can be used directly
+        in models for continuous outcomes. We additionally provide a set of utilities
+        for calculating and optimizing the time dependent area under the ROC curve 
+        that is calculated using pseudo observations for the cumulative incidence. 
 License: MIT
 Encoding: UTF-8
 LazyData: true
 Imports: 
     pseudo,
     survival
-Suggests: 
-    testthat
+Suggests:
+    testthat,
+    xgboost,
+    SuperLearner,
+    knitr,
+    rmarkdown
+RoxygenNote: 6.1.1
+VignetteBuilder: knitr

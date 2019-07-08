@@ -1,0 +1,232 @@
+---
+title: "Introduction to event history prediction with pseudo-observations"
+author: Michael C Sachs
+date: '`r Sys.Date()`'
+output: rmarkdown::html_vignette
+bibliography: references.bib
+vignette: >
+  %\VignetteIndexEntry{Introduction to event history prediction with pseudo-observations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(pseudoloss)
+```
+
+# Under development
+
+# Introduction to pseudo observations
+
+Censored data pose a problem for the development and evaluation of prediction models. Pseudo-observations offer a solution to this problem. 
+
+We are interested in predicting the risk of some event within 5 years of diagnosis for subject $i$. Due to the censoring and competing risks, we will use the cumulative incidence of failure due to surgery at 5 years: 
+\[
+C_1(t_{\star}) = E\{I(T \leq t_{\star}, \delta = 1)\} = \int_{0}^{t_{\star}} S(u)\alpha_{1}(u) \,du,
+\]
+where $S(u)$ is the overall survival probability, $\alpha_{1}(u)$ is the cause-specific hazard for failures from abdominal surgery, and $t_{\star} = 5$ years. The cause-specific hazard function is defined as $\alpha_{1}(t) = \lim_{d \rightarrow 0} P(t \leq T < t + d, \delta = 1 | T \geq t) / d$. 
+
+## Pseudo-observations for cumulative incidence
+
+Following @andersen2010pseudo, we summarize the survival data as the counting process: $N_1(t) = \sum_i I(Y_i \leq t, \Delta_i = 1),$ giving the number of observed failures due to surgery on or before time $t$, and $R(t) = \sum_i I(Y_i \geq t)$ gives the number of subjects still at risk just before time $t$. Our estimator, omitting the subscript $i$, of the cumulative incidence function is the Aalen-Johansen estimator @aalen1978empirical $\hat{C}_1(t) = \int_{0}^{t} \hat{S}(u)\, d\hat{A}_1(u),$ where $\hat{A}_1(u) = \int_{0}^t \, dN_1(u) / R(u)$ is the Nelson-Aalen estimator for the cumulative cause-specific hazard for surgery failures, and $\hat{S}$ is the Kaplan-Meier estimator of the overall survival from any cause. 
+
+Then the $i$th pseudo-observation for cause 1 at time $t$ is 
+\[
+\hat{C}^i_1(t) = n \hat{C}_1(t) - (n - 1) \hat{C}_1^{-i}(t), 
+\]
+where $\hat{C}^{-i}_1(t)$ is the cumulative incidence function estimator computed by using the sample excluding the $i$th observation. By construction and the unbiasedness of the Aalen-Johansen estimator, the pseudo-observations are unbiased for the cumulative cause-specific incidence: $E\{\hat{C}^i_1(t)\} = C_1(t).$ Moreover, observe that the survival from any cause can be related to the pseudo-observations by $E\{1 - \sum_{j=1}^3\hat{C}^i_j(t)\} = P(Y_i > t)$.
+
+@graw2009pseudo proved that the mean of pseudo-observations conditional on covariates is asymptotically unbiased for the conditional cause-specific cumulative incidence. The validity of this proof and asymptotic properties of pseudo-observations in regression settings was further studied in @overgaard2017asymptotic and @jacobsen2016note. Thus we have,
+
+\[
+E(\hat{C}^i_1(t_{\star}) | \mathbf{X_i}) = P(T_i \leq t_{\star}, \delta_i = 1 |  \mathbf{X_i}) + o_P(1). 
+\]
+This property of the pseudo-observations for the cumulative incidence suggests that it is reasonable to use them as the outcome in prediction models in which we aim to estimate a general predictor function $\hat{f}(\mathbf{X_i})$ that has desirable prediction properties. Then, as we show in the next section, we can evaluate the mapping $\hat{f}$ for predicting surgery by estimating the time-varying ROC curve, again using pseudo-observations. 
+
+Conditional asymptotic unbiasedness of the pseudo-observations relies on the assumption that censoring time is independent of event time, event type and all other covariates; this was called `completely independent censoring' in @overgaard2017asymptotic. In our dataset, due to the quality of the Swedish population register, there is no loss to follow-up that is not due to death or emigration. All other censoring before 5 years is determined by the time of entry into the study (the date of CD diagnosis). For this reason, we use stratified pseudo-observation procedures. This was suggested in @andersen2010pseudo, as a way to deal with censoring that is dependent on a known categorical covariate. In other studies with loss to follow-up, censoring dependence maybe more complex. Procedures to extend pseudo-observations by modeling the censoring distribution and reweighting have been developed @binder2014pseudo.
+
+
+## Time varying measures of prediction accuracy estimated using pseudo observations
+
+The time-varying ROC curve @heagerty2000time, @saha2010time for a continuous predicted value $B_i$ at time $t$ and cutoff $c$ is defined by the time varying, cause-specific true-positive fraction 
+\[
+TP(t, c) = P(B_i > c | T_i \leq t, \delta_i = 1)
+\]
+and the false positive fraction that is defined across all event types: 
+\[
+FP(t, c) = P(B_i > c | T_i > t).
+\]
+While the $TP$ can be defined for all causes, we omit the cause-type subscript for the $TP$ because we are only interested in the failures due to cause 1 (abdominal surgery). We can estimate these using pseudo-observations as follows. Bayes' rule gives us 
+
+\[
+P(B_i > c | T_i \leq t, \delta_i = 1) = \frac{P(T_i \leq t, \delta_i = 1 | B_i > c) P(B_i > c)}{P(T_i \leq t, \delta_i = 1)},
+\]
+which is the ratio of a conditional cumulative incidence to the marginal cumulative incidence. This suggests the following estimators: 
+\[
+\widehat{TP}(t, c) = \frac{\sum_{i} \hat{C}^i_1(t) I(B_i > c)}{\sum_{i} \hat{C}^i_1(t)}
+\mbox{ and }
+\widehat{FP}(t, c) = \frac{\sum_{i} (1 - \sum_{j=1}^3\hat{C}^i_j(t)) I(B_i > c)}{\sum_{i} 1 - \sum_{j=1}^3\hat{C}^i_j(t)}.
+\]
+
+We conjecture that these estimators are asymptotically unbiased, based on the properties of the pseudo-observations shown in @overgaard2017asymptotic and application of the continuous mapping theorem.  
+
+The ROC curve at time $t$ is a plot of the pairs $\{FP(t, c), TP(t, c)\}$ as the cutoff $c$ varies. The estimated area under the time varying ROC curve at a fixed time $t$ for signature $B$ is computed numerically using the trapezoidal rule, and is denoted $\widehat{AUC}(B, t)$. To our knowledge, this is a novel estimator of the time-varying ROC curve and, as a result, the time-varying AUC. The time-varying AUC has recently been shown to be a proper scoring function in the context of risk prediction of events at a fixed time, unlike the survival concordance index @blanche2018c, making it a sensible target for prediction. The Brier score is a proper scoring rule also, but is difficult to interpret in this case because the pseudo-observations are unbounded and because the true binary outcome is not completely observed. The time-varying predictiveness curve is then used to comprehensively evaluate the performance of the resulting prediction models.
+
+## Ramp functions
+
+In the above equations for the ROC curve, the indicator functions $I(B_i > c)$ pose problems for optimization. Specifically, they are step functions that are not differentiable (the derivatives are always 0 or infinite). To progress, we will replace the indicator functions with smooth approximations of them. Thus, in the above equations we will use $I(B_i > c) \approx \phi(B_i, c, \sigma) = (1 + exp(-(B_i - c) / \sigma))^{-1}$, with a fixed, small value of $\sigma$. As $\sigma \rightarrow \infty$, the sigmoid function approaches the indicator function. 
+
+The key advantage of the smooth ramp function is that it is differentiable. Therefore, we can compute the gradient and hessian in a stable way to ensure that our optimization routines work correctly and converge to the optimal solution, whether it is with xgboost or general regression. 
+
+
+## Alternative approaches
+
+- Parametric survival models
+- Dichotomization and inverse probability of censoring weighting
+- Survival random forests (actually uses pseudo-observations)
+
+
+
+# Examples of the prediction approaches 
+
+Throughout the examples, we are going to use a slightly modified version of the NCCTG Lung Cancer Data which is included with the survival package. 
+
+```{r data}
+library(survival)
+library(pseudoloss)
+library(pseudo)
+
+set.seed(81445)
+
+pseus <- make_pseudo_matrix(pseudoci(lung$time, lung$status - 1, tmax = 400))
+
+noise <- matrix(rnorm(nrow(pseus) * 5), ncol = 5)
+X1 <- lung$age / max(lung$age)
+X2 <- pseus[, 1] + rnorm(nrow(lung))
+
+podata <- data.frame(X1 = X1, X2 = X2, X3 = lung$sex, V = noise, Y = pseus[, 1])
+head(podata)
+
+sampdex <- sample(1:nrow(podata), 75, replace = FALSE)
+validation <- podata[sampdex,]
+training <- podata[setdiff(1:nrow(podata), sampdex), ]
+
+```
+
+## AUC regression
+
+Finding the linear combination of predictors that optimizes the pseudo-AUC loss function.
+
+First define the loss function in terms of the coefficient vector $\beta$. Then the gradient in terms of the coefficient vector. Then we optimize with respect to beta.
+```{r reg}
+
+XX.var <- as.matrix(training[, 1:8])
+k <- 5
+fn.auc <- function(beta) {
+    
+    yy <- c(XX.var %*% matrix(beta, ncol = 1))
+    1 - ramp_auc(yy, matrix(training$Y, ncol = 1), rampfunc = smoothramp) + k * sum(beta ^ 2)
+}
+
+gn.auc <- function(beta) {
+    
+    -multivar_auc_gradient(XX.var, matrix(training$Y, ncol = 1))(beta) + 2 * k * sum(beta)
+    
+}
+
+start.beta <- rep(1 / 8, 8)
+opt.fit <- optim(par = start.beta, fn = fn.auc, gr = gn.auc, method = "BFGS")
+
+```
+
+Let's see how the results are on the holdout sample. 
+
+```{r regperf, fig.width = 7, fig.height = 5.5}
+y.hat.validation <- c(as.matrix(validation[, 1:8]) %*% opt.fit$par)
+roc.reg <- calc_roc(y.hat.validation, matrix(validation$Y, ncol = 1))
+plot(roc.reg, type = "l", main = "AUC regression")
+abline(0, 1, lty  = 3)
+```
+
+
+## Extreme gradient boosting
+
+```{r xgfit, fig.width = 7, fig.height = 5.5}
+library(xgboost)
+
+dtrain.po <- xgb.DMatrix(as(as.matrix(training[, 1:8]), "dgCMatrix"), label = training$Y)
+attr(dtrain.po, "otherc") <- NULL
+
+param <- list(max_depth=4,eta = .75, nthread = 2, verbose = 1,
+              objective = pseudoauc_objective, base_score = .5,
+              booster = "gbtree", maximize = FALSE,
+              early_stopping_rounds = NULL)
+
+xgb.fit <- xgb.train(param, dtrain.po, nrounds = 100, verbose = 1)
+
+xgb.hat.valid <- predict(xgb.fit, newdata = as(as.matrix(validation[, 1:8]), "dgCMatrix"), 
+                         validation$Y)
+
+roc.xgb <- calc_roc(xgb.hat.valid, matrix(validation$Y, ncol = 1))
+
+plot(roc.reg, type = "l", main = "Out of sample ROC curve")
+lines(roc.xgb, lty = 2)
+abline(0, 1, lty  = 3)
+legend("bottomright", legend = c("AUC regression", "xgboost", "reference"), 
+       lty = 1:3)
+```
+
+
+## SuperLearner
+
+First fit each learner in the library using the default function and method. Then use the pre-validated prediction matrix Z to optimize the pseudo AUC to find the optimal coefficients.
+
+```{r slearn, fig.width = 7, fig.height = 5.5}
+library(SuperLearner)
+
+pred.vars <- c(paste0("X", 1:3), paste0("V.", 1:5))
+SL.library <- c("SL.glm", "SL.gam", "SL.ksvm", "SL.rpart")
+sltest <- SuperLearner(Y = training$Y, X = training[, pred.vars], SL.library = SL.library,
+                           verbose = FALSE, method = "method.NNLS")
+
+
+
+XX.var <- sltest$Z
+k <- 5
+fn.auc <- function(beta) {
+    
+    yy <- c(XX.var %*% matrix(beta, ncol = 1))
+    1 - ramp_auc(yy, matrix(training$Y, ncol = 1), rampfunc = smoothramp) + k * sum(beta ^ 2)
+}
+
+gn.auc <- function(beta) {
+    
+    -multivar_auc_gradient(XX.var, matrix(training$Y, ncol = 1))(beta) + 2 * k * sum(beta)
+    
+}
+
+start.beta <- rep(1 / ncol(XX.var), ncol(XX.var))
+
+## SL optimal coefficients
+opt.fit <- optim(par = start.beta, fn = fn.auc, gr = gn.auc, method = "BFGS")
+
+
+sl.pred.validation <- predict(sltest, newdata = validation[, pred.vars])$library.predict %*% opt.fit$par
+
+
+roc.sl <- calc_roc(sl.pred.validation, matrix(validation$Y, ncol = 1))
+
+plot(roc.reg, type = "l", main = "Out of sample ROC curve")
+lines(roc.xgb, lty = 2)
+lines(roc.sl, lty = 4)
+abline(0, 1, lty  = 3)
+legend("bottomright", legend = c("AUC regression", "xgboost", "reference", "SuperLearner"), 
+       lty = 1:4)
+```

@@ -8,6 +8,7 @@
 #'
 #' @param pseudo an object as returned from pseudoci, pseudosurv, or similar
 #' @param time index of the time point of interest
+#' @export
 
 make_pseudo_matrix <- function(pseudo, time = 1) {
 
@@ -24,6 +25,7 @@ make_pseudo_matrix <- function(pseudo, time = 1) {
 #'
 #' @param pseudo an object as returned from pseudoci, pseudosurv, or similar
 #' @param cause index of the cause of interest
+#' @export
 
 make_pseudo_predictor <- function(pseudo, cause = 1) {
 
