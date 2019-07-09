@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Michael C Sachs" />
+
+<meta name="date" content="2019-07-09" />
+
+<title>Introduction to event history prediction with pseudo-observations</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to event history prediction with pseudo-observations</h1>
+<h4 class="author">Michael C Sachs</h4>
+<h4 class="date">2019-07-09</h4>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(pseudoloss)</a></code></pre></div>
+<div id="under-development" class="section level1">
+<h1>Under development</h1>
+</div>
+<div id="introduction-to-pseudo-observations" class="section level1">
+<h1>Introduction to pseudo observations</h1>
+<p>Censored data pose a problem for the development and evaluation of prediction models. Pseudo-observations offer a solution to this problem.</p>
+<p>We are interested in predicting the risk of some event within 5 years of diagnosis for subject <span class="math inline">\(i\)</span>. Due to the censoring and competing risks, we will use the cumulative incidence of failure due to surgery at 5 years: <span class="math display">\[
+C_1(t_{\star}) = E\{I(T \leq t_{\star}, \delta = 1)\} = \int_{0}^{t_{\star}} S(u)\alpha_{1}(u) \,du,
+\]</span> where <span class="math inline">\(S(u)\)</span> is the overall survival probability, <span class="math inline">\(\alpha_{1}(u)\)</span> is the cause-specific hazard for failures from abdominal surgery, and <span class="math inline">\(t_{\star} = 5\)</span> years. The cause-specific hazard function is defined as <span class="math inline">\(\alpha_{1}(t) = \lim_{d \rightarrow 0} P(t \leq T &lt; t + d, \delta = 1 | T \geq t) / d\)</span>.</p>
+<div id="pseudo-observations-for-cumulative-incidence" class="section level2">
+<h2>Pseudo-observations for cumulative incidence</h2>
+<p>Following <span class="citation">Andersen and Pohar Perme (2010)</span>, we summarize the survival data as the counting process: <span class="math inline">\(N_1(t) = \sum_i I(Y_i \leq t, \Delta_i = 1),\)</span> giving the number of observed failures due to surgery on or before time <span class="math inline">\(t\)</span>, and <span class="math inline">\(R(t) = \sum_i I(Y_i \geq t)\)</span> gives the number of subjects still at risk just before time <span class="math inline">\(t\)</span>. Our estimator, omitting the subscript <span class="math inline">\(i\)</span>, of the cumulative incidence function is the Aalen-Johansen estimator <span class="citation">Aalen and Johansen (1978)</span> <span class="math inline">\(\hat{C}_1(t) = \int_{0}^{t} \hat{S}(u)\, d\hat{A}_1(u),\)</span> where <span class="math inline">\(\hat{A}_1(u) = \int_{0}^t \, dN_1(u) / R(u)\)</span> is the Nelson-Aalen estimator for the cumulative cause-specific hazard for surgery failures, and <span class="math inline">\(\hat{S}\)</span> is the Kaplan-Meier estimator of the overall survival from any cause.</p>
+<p>Then the <span class="math inline">\(i\)</span>th pseudo-observation for cause 1 at time <span class="math inline">\(t\)</span> is <span class="math display">\[
+\hat{C}^i_1(t) = n \hat{C}_1(t) - (n - 1) \hat{C}_1^{-i}(t), 
+\]</span> where <span class="math inline">\(\hat{C}^{-i}_1(t)\)</span> is the cumulative incidence function estimator computed by using the sample excluding the <span class="math inline">\(i\)</span>th observation. By construction and the unbiasedness of the Aalen-Johansen estimator, the pseudo-observations are unbiased for the cumulative cause-specific incidence: <span class="math inline">\(E\{\hat{C}^i_1(t)\} = C_1(t).\)</span> Moreover, observe that the survival from any cause can be related to the pseudo-observations by <span class="math inline">\(E\{1 - \sum_{j=1}^3\hat{C}^i_j(t)\} = P(Y_i &gt; t)\)</span>.</p>
+<p><span class="citation">Graw, Gerds, and Schumacher (2009)</span> proved that the mean of pseudo-observations conditional on covariates is asymptotically unbiased for the conditional cause-specific cumulative incidence. The validity of this proof and asymptotic properties of pseudo-observations in regression settings was further studied in <span class="citation">Overgaard et al. (2017)</span> and <span class="citation">Jacobsen and Martinussen (2016)</span>. Thus we have,</p>
+<p><span class="math display">\[
+E(\hat{C}^i_1(t_{\star}) | \mathbf{X_i}) = P(T_i \leq t_{\star}, \delta_i = 1 |  \mathbf{X_i}) + o_P(1). 
+\]</span> This property of the pseudo-observations for the cumulative incidence suggests that it is reasonable to use them as the outcome in prediction models in which we aim to estimate a general predictor function <span class="math inline">\(\hat{f}(\mathbf{X_i})\)</span> that has desirable prediction properties. Then, as we show in the next section, we can evaluate the mapping <span class="math inline">\(\hat{f}\)</span> for predicting surgery by estimating the time-varying ROC curve, again using pseudo-observations.</p>
+<p>Conditional asymptotic unbiasedness of the pseudo-observations relies on the assumption that censoring time is independent of event time, event type and all other covariates; this was called `completely independent censoring’ in <span class="citation">Overgaard et al. (2017)</span>. In our dataset, due to the quality of the Swedish population register, there is no loss to follow-up that is not due to death or emigration. All other censoring before 5 years is determined by the time of entry into the study (the date of CD diagnosis). For this reason, we use stratified pseudo-observation procedures. This was suggested in <span class="citation">Andersen and Pohar Perme (2010)</span>, as a way to deal with censoring that is dependent on a known categorical covariate. In other studies with loss to follow-up, censoring dependence maybe more complex. Procedures to extend pseudo-observations by modeling the censoring distribution and reweighting have been developed <span class="citation">Binder, Gerds, and Andersen (2014)</span>.</p>
+</div>
+<div id="time-varying-measures-of-prediction-accuracy-estimated-using-pseudo-observations" class="section level2">
+<h2>Time varying measures of prediction accuracy estimated using pseudo observations</h2>
+<p>The time-varying ROC curve <span class="citation">Heagerty, Lumley, and Pepe (2000)</span>, <span class="citation">Saha and Heagerty (2010)</span> for a continuous predicted value <span class="math inline">\(B_i\)</span> at time <span class="math inline">\(t\)</span> and cutoff <span class="math inline">\(c\)</span> is defined by the time varying, cause-specific true-positive fraction <span class="math display">\[
+TP(t, c) = P(B_i &gt; c | T_i \leq t, \delta_i = 1)
+\]</span> and the false positive fraction that is defined across all event types: <span class="math display">\[
+FP(t, c) = P(B_i &gt; c | T_i &gt; t).
+\]</span> While the <span class="math inline">\(TP\)</span> can be defined for all causes, we omit the cause-type subscript for the <span class="math inline">\(TP\)</span> because we are only interested in the failures due to cause 1 (abdominal surgery). We can estimate these using pseudo-observations as follows. Bayes’ rule gives us</p>
+<p><span class="math display">\[
+P(B_i &gt; c | T_i \leq t, \delta_i = 1) = \frac{P(T_i \leq t, \delta_i = 1 | B_i &gt; c) P(B_i &gt; c)}{P(T_i \leq t, \delta_i = 1)},
+\]</span> which is the ratio of a conditional cumulative incidence to the marginal cumulative incidence. This suggests the following estimators: <span class="math display">\[
+\widehat{TP}(t, c) = \frac{\sum_{i} \hat{C}^i_1(t) I(B_i &gt; c)}{\sum_{i} \hat{C}^i_1(t)}
+\mbox{ and }
+\widehat{FP}(t, c) = \frac{\sum_{i} (1 - \sum_{j=1}^3\hat{C}^i_j(t)) I(B_i &gt; c)}{\sum_{i} 1 - \sum_{j=1}^3\hat{C}^i_j(t)}.
+\]</span></p>
+<p>We conjecture that these estimators are asymptotically unbiased, based on the properties of the pseudo-observations shown in <span class="citation">Overgaard et al. (2017)</span> and application of the continuous mapping theorem.</p>
+<p>The ROC curve at time <span class="math inline">\(t\)</span> is a plot of the pairs <span class="math inline">\(\{FP(t, c), TP(t, c)\}\)</span> as the cutoff <span class="math inline">\(c\)</span> varies. The estimated area under the time varying ROC curve at a fixed time <span class="math inline">\(t\)</span> for signature <span class="math inline">\(B\)</span> is computed numerically using the trapezoidal rule, and is denoted <span class="math inline">\(\widehat{AUC}(B, t)\)</span>. To our knowledge, this is a novel estimator of the time-varying ROC curve and, as a result, the time-varying AUC. The time-varying AUC has recently been shown to be a proper scoring function in the context of risk prediction of events at a fixed time, unlike the survival concordance index <span class="citation">Blanche, Kattan, and Gerds (2018)</span>, making it a sensible target for prediction. The Brier score is a proper scoring rule also, but is difficult to interpret in this case because the pseudo-observations are unbounded and because the true binary outcome is not completely observed. The time-varying predictiveness curve is then used to comprehensively evaluate the performance of the resulting prediction models.</p>
+</div>
+<div id="ramp-functions" class="section level2">
+<h2>Ramp functions</h2>
+<p>In the above equations for the ROC curve, the indicator functions <span class="math inline">\(I(B_i &gt; c)\)</span> pose problems for optimization. Specifically, they are step functions that are not differentiable (the derivatives are always 0 or infinite). To progress, we will replace the indicator functions with smooth approximations of them. Thus, in the above equations we will use <span class="math inline">\(I(B_i &gt; c) \approx \phi(B_i, c, \sigma) = (1 + exp(-(B_i - c) / \sigma))^{-1}\)</span>, with a fixed, small value of <span class="math inline">\(\sigma\)</span>. As <span class="math inline">\(\sigma \rightarrow \infty\)</span>, the sigmoid function approaches the indicator function.</p>
+<p>The key advantage of the smooth ramp function is that it is differentiable. Therefore, we can compute the gradient and hessian in a stable way to ensure that our optimization routines work correctly and converge to the optimal solution, whether it is with xgboost or general regression.</p>
+</div>
+<div id="alternative-approaches" class="section level2">
+<h2>Alternative approaches</h2>
+<ul>
+<li>Parametric survival models</li>
+<li>Dichotomization and inverse probability of censoring weighting</li>
+<li>Survival random forests (actually uses pseudo-observations)</li>
+</ul>
+</div>
+</div>
+<div id="examples-of-the-prediction-approaches" class="section level1">
+<h1>Examples of the prediction approaches</h1>
+<p>Throughout the examples, we are going to use a slightly modified version of the NCCTG Lung Cancer Data which is included with the survival package.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">library</span>(survival)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co">#&gt; Warning: package 'survival' was built under R version 3.5.3</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">library</span>(pseudoloss)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">library</span>(pseudo)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="co">#&gt; Loading required package: KMsurv</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="co">#&gt; Warning: package 'KMsurv' was built under R version 3.5.2</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="co">#&gt; Loading required package: geepack</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="co">#&gt; Warning: package 'geepack' was built under R version 3.5.2</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">set.seed</span>(<span class="dv">81445</span>)</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">pseus &lt;-<span class="st"> </span><span class="kw">make_pseudo_matrix</span>(<span class="kw">pseudoci</span>(lung<span class="op">$</span>time, lung<span class="op">$</span>status <span class="op">-</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">tmax =</span> <span class="dv">400</span>))</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">noise &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rnorm</span>(<span class="kw">nrow</span>(pseus) <span class="op">*</span><span class="st"> </span><span class="dv">5</span>), <span class="dt">ncol =</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">X1 &lt;-<span class="st"> </span>lung<span class="op">$</span>age <span class="op">/</span><span class="st"> </span><span class="kw">max</span>(lung<span class="op">$</span>age)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">X2 &lt;-<span class="st"> </span>pseus[, <span class="dv">1</span>] <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(<span class="kw">nrow</span>(lung))</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">podata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">X1 =</span> X1, <span class="dt">X2 =</span> X2, <span class="dt">X3 =</span> lung<span class="op">$</span>sex, <span class="dt">V =</span> noise, <span class="dt">Y =</span> pseus[, <span class="dv">1</span>])</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"><span class="kw">head</span>(podata)</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="co">#&gt;          X1          X2 X3        V.1         V.2         V.3         V.4</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="co">#&gt; 1 0.9024390 -1.68604281  1 -1.6991261 -0.63545745 -1.20404191 -0.85111931</span></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22"><span class="co">#&gt; 2 0.8292683 -0.34773687  1  0.3883003  0.92850710 -0.55864935  1.40662797</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23"><span class="co">#&gt; 3 0.6829268  0.50818983  1 -0.4583962 -0.89156543 -0.48962445  1.83598781</span></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24"><span class="co">#&gt; 4 0.6951220  0.54743625  1 -0.4122669  0.09925982  0.08865562 -1.27158173</span></a>
+<a class="sourceLine" id="cb2-25" data-line-number="25"><span class="co">#&gt; 5 0.7317073 -1.13985226  1 -2.1917655 -0.10729445  1.31570669  0.35799594</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26"><span class="co">#&gt; 6 0.9024390 -0.01218755  1  1.8704009  2.74691609  1.09524358 -0.04584725</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27"><span class="co">#&gt;          V.5          Y</span></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"><span class="co">#&gt; 1  0.4620005  1.2253533</span></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29"><span class="co">#&gt; 2  0.2267706 -0.1540361</span></a>
+<a class="sourceLine" id="cb2-30" data-line-number="30"><span class="co">#&gt; 3  0.2772566 -0.1540361</span></a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"><span class="co">#&gt; 4 -0.1391767  1.0489429</span></a>
+<a class="sourceLine" id="cb2-32" data-line-number="32"><span class="co">#&gt; 5  0.8039388 -0.1540361</span></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33"><span class="co">#&gt; 6 -0.4692213 -0.1540361</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34"></a>
+<a class="sourceLine" id="cb2-35" data-line-number="35">sampdex &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(podata), <span class="dv">75</span>, <span class="dt">replace =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">validation &lt;-<span class="st"> </span>podata[sampdex,]</a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">training &lt;-<span class="st"> </span>podata[<span class="kw">setdiff</span>(<span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(podata), sampdex), ]</a></code></pre></div>
+<div id="auc-regression" class="section level2">
+<h2>AUC regression</h2>
+<p>Finding the linear combination of predictors that optimizes the pseudo-AUC loss function.</p>
+<p>First define the loss function in terms of the coefficient vector <span class="math inline">\(\beta\)</span>. Then the gradient in terms of the coefficient vector. Then we optimize with respect to beta.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">XX.var &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(training[, <span class="dv">1</span><span class="op">:</span><span class="dv">8</span>])</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">k &lt;-<span class="st"> </span><span class="dv">5</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">fn.auc &lt;-<span class="st"> </span><span class="cf">function</span>(beta) {</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    </a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    yy &lt;-<span class="st"> </span><span class="kw">c</span>(XX.var <span class="op">%*%</span><span class="st"> </span><span class="kw">matrix</span>(beta, <span class="dt">ncol =</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    <span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="kw">ramp_auc</span>(yy, <span class="kw">matrix</span>(training<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>), <span class="dt">rampfunc =</span> smoothramp) <span class="op">+</span><span class="st"> </span>k <span class="op">*</span><span class="st"> </span><span class="kw">sum</span>(beta <span class="op">^</span><span class="st"> </span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">}</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">gn.auc &lt;-<span class="st"> </span><span class="cf">function</span>(beta) {</a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">    </a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="op">-</span><span class="kw">multivar_auc_gradient</span>(XX.var, <span class="kw">matrix</span>(training<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>))(beta) <span class="op">+</span><span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span>k <span class="op">*</span><span class="st"> </span><span class="kw">sum</span>(beta)</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">    </a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">}</a>
+<a class="sourceLine" id="cb3-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">start.beta &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span><span class="dv">8</span>, <span class="dv">8</span>)</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">opt.fit &lt;-<span class="st"> </span><span class="kw">optim</span>(<span class="dt">par =</span> start.beta, <span class="dt">fn =</span> fn.auc, <span class="dt">gr =</span> gn.auc, <span class="dt">method =</span> <span class="st">&quot;BFGS&quot;</span>)</a></code></pre></div>
+<p>Let’s see how the results are on the holdout sample.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">y.hat.validation &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">as.matrix</span>(validation[, <span class="dv">1</span><span class="op">:</span><span class="dv">8</span>]) <span class="op">%*%</span><span class="st"> </span>opt.fit<span class="op">$</span>par)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">roc.reg &lt;-<span class="st"> </span><span class="kw">calc_roc</span>(y.hat.validation, <span class="kw">matrix</span>(validation<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">plot</span>(roc.reg, <span class="dt">type =</span> <span class="st">&quot;l&quot;</span>, <span class="dt">main =</span> <span class="st">&quot;AUC regression&quot;</span>)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty  =</span> <span class="dv">3</span>)</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+<div id="extreme-gradient-boosting" class="section level2">
+<h2>Extreme gradient boosting</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">library</span>(xgboost)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co">#&gt; Warning: package 'xgboost' was built under R version 3.5.3</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">dtrain.po &lt;-<span class="st"> </span><span class="kw">xgb.DMatrix</span>(<span class="kw">as</span>(<span class="kw">as.matrix</span>(training[, <span class="dv">1</span><span class="op">:</span><span class="dv">8</span>]), <span class="st">&quot;dgCMatrix&quot;</span>), <span class="dt">label =</span> training<span class="op">$</span>Y)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="kw">attr</span>(dtrain.po, <span class="st">&quot;otherc&quot;</span>) &lt;-<span class="st"> </span><span class="ot">NULL</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">param &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">max_depth=</span><span class="dv">4</span>,<span class="dt">eta =</span> <span class="fl">.75</span>, <span class="dt">nthread =</span> <span class="dv">2</span>, <span class="dt">verbose =</span> <span class="dv">1</span>,</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">              <span class="dt">objective =</span> pseudoauc_objective, <span class="dt">base_score =</span> <span class="fl">.5</span>,</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">              <span class="dt">booster =</span> <span class="st">&quot;gbtree&quot;</span>, <span class="dt">maximize =</span> <span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">              <span class="dt">early_stopping_rounds =</span> <span class="ot">NULL</span>)</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">xgb.fit &lt;-<span class="st"> </span><span class="kw">xgb.train</span>(param, dtrain.po, <span class="dt">nrounds =</span> <span class="dv">100</span>, <span class="dt">verbose =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">xgb.hat.valid &lt;-<span class="st"> </span><span class="kw">predict</span>(xgb.fit, <span class="dt">newdata =</span> <span class="kw">as</span>(<span class="kw">as.matrix</span>(validation[, <span class="dv">1</span><span class="op">:</span><span class="dv">8</span>]), <span class="st">&quot;dgCMatrix&quot;</span>), </a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">                         validation<span class="op">$</span>Y)</a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17">roc.xgb &lt;-<span class="st"> </span><span class="kw">calc_roc</span>(xgb.hat.valid, <span class="kw">matrix</span>(validation<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19"><span class="kw">plot</span>(roc.reg, <span class="dt">type =</span> <span class="st">&quot;l&quot;</span>, <span class="dt">main =</span> <span class="st">&quot;Out of sample ROC curve&quot;</span>)</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20"><span class="kw">lines</span>(roc.xgb, <span class="dt">lty =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21"><span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty  =</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb5-22" data-line-number="22"><span class="kw">legend</span>(<span class="st">&quot;bottomright&quot;</span>, <span class="dt">legend =</span> <span class="kw">c</span>(<span class="st">&quot;AUC regression&quot;</span>, <span class="st">&quot;xgboost&quot;</span>, <span class="st">&quot;reference&quot;</span>), </a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">       <span class="dt">lty =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">3</span>)</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+<div id="superlearner" class="section level2">
+<h2>SuperLearner</h2>
+<p>First fit each learner in the library using the default function and method. Then use the pre-validated prediction matrix Z to optimize the pseudo AUC to find the optimal coefficients.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">library</span>(SuperLearner)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="co">#&gt; Warning: package 'SuperLearner' was built under R version 3.5.1</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="co">#&gt; Loading required package: nnls</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="co">#&gt; Warning: package 'nnls' was built under R version 3.5.2</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="co">#&gt; Super Learner</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="co">#&gt; Version: 2.0-24</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"><span class="co">#&gt; Package created on 2018-08-10</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">pred.vars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">paste0</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">3</span>), <span class="kw">paste0</span>(<span class="st">&quot;V.&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">SL.library &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;SL.glm&quot;</span>, <span class="st">&quot;SL.gam&quot;</span>, <span class="st">&quot;SL.ksvm&quot;</span>, <span class="st">&quot;SL.rpart&quot;</span>)</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">sltest &lt;-<span class="st"> </span><span class="kw">SuperLearner</span>(<span class="dt">Y =</span> training<span class="op">$</span>Y, <span class="dt">X =</span> training[, pred.vars], <span class="dt">SL.library =</span> SL.library,</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">                           <span class="dt">verbose =</span> <span class="ot">FALSE</span>, <span class="dt">method =</span> <span class="st">&quot;method.NNLS&quot;</span>)</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13"><span class="co">#&gt; Loading required package: gam</span></a>
+<a class="sourceLine" id="cb6-14" data-line-number="14"><span class="co">#&gt; Warning: package 'gam' was built under R version 3.5.3</span></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15"><span class="co">#&gt; Loading required package: splines</span></a>
+<a class="sourceLine" id="cb6-16" data-line-number="16"><span class="co">#&gt; Loading required package: foreach</span></a>
+<a class="sourceLine" id="cb6-17" data-line-number="17"><span class="co">#&gt; Loaded gam 1.16</span></a>
+<a class="sourceLine" id="cb6-18" data-line-number="18"><span class="co">#&gt; Loading required package: kernlab</span></a>
+<a class="sourceLine" id="cb6-19" data-line-number="19"><span class="co">#&gt; Warning: package 'kernlab' was built under R version 3.5.1</span></a>
+<a class="sourceLine" id="cb6-20" data-line-number="20"><span class="co">#&gt; Loading required package: rpart</span></a>
+<a class="sourceLine" id="cb6-21" data-line-number="21"><span class="co">#&gt; Warning: package 'rpart' was built under R version 3.5.3</span></a>
+<a class="sourceLine" id="cb6-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb6-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb6-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb6-25" data-line-number="25">XX.var &lt;-<span class="st"> </span>sltest<span class="op">$</span>Z</a>
+<a class="sourceLine" id="cb6-26" data-line-number="26">k &lt;-<span class="st"> </span><span class="dv">5</span></a>
+<a class="sourceLine" id="cb6-27" data-line-number="27">fn.auc &lt;-<span class="st"> </span><span class="cf">function</span>(beta) {</a>
+<a class="sourceLine" id="cb6-28" data-line-number="28">    </a>
+<a class="sourceLine" id="cb6-29" data-line-number="29">    yy &lt;-<span class="st"> </span><span class="kw">c</span>(XX.var <span class="op">%*%</span><span class="st"> </span><span class="kw">matrix</span>(beta, <span class="dt">ncol =</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb6-30" data-line-number="30">    <span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="kw">ramp_auc</span>(yy, <span class="kw">matrix</span>(training<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>), <span class="dt">rampfunc =</span> smoothramp) <span class="op">+</span><span class="st"> </span>k <span class="op">*</span><span class="st"> </span><span class="kw">sum</span>(beta <span class="op">^</span><span class="st"> </span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb6-31" data-line-number="31">}</a>
+<a class="sourceLine" id="cb6-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb6-33" data-line-number="33">gn.auc &lt;-<span class="st"> </span><span class="cf">function</span>(beta) {</a>
+<a class="sourceLine" id="cb6-34" data-line-number="34">    </a>
+<a class="sourceLine" id="cb6-35" data-line-number="35">    <span class="op">-</span><span class="kw">multivar_auc_gradient</span>(XX.var, <span class="kw">matrix</span>(training<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>))(beta) <span class="op">+</span><span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span>k <span class="op">*</span><span class="st"> </span><span class="kw">sum</span>(beta)</a>
+<a class="sourceLine" id="cb6-36" data-line-number="36">    </a>
+<a class="sourceLine" id="cb6-37" data-line-number="37">}</a>
+<a class="sourceLine" id="cb6-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb6-39" data-line-number="39">start.beta &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span><span class="kw">ncol</span>(XX.var), <span class="kw">ncol</span>(XX.var))</a>
+<a class="sourceLine" id="cb6-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb6-41" data-line-number="41">## SL optimal coefficients</a>
+<a class="sourceLine" id="cb6-42" data-line-number="42">opt.fit &lt;-<span class="st"> </span><span class="kw">optim</span>(<span class="dt">par =</span> start.beta, <span class="dt">fn =</span> fn.auc, <span class="dt">gr =</span> gn.auc, <span class="dt">method =</span> <span class="st">&quot;BFGS&quot;</span>)</a>
+<a class="sourceLine" id="cb6-43" data-line-number="43"></a>
+<a class="sourceLine" id="cb6-44" data-line-number="44"></a>
+<a class="sourceLine" id="cb6-45" data-line-number="45">sl.pred.validation &lt;-<span class="st"> </span><span class="kw">predict</span>(sltest, <span class="dt">newdata =</span> validation[, pred.vars])<span class="op">$</span>library.predict <span class="op">%*%</span><span class="st"> </span>opt.fit<span class="op">$</span>par</a>
+<a class="sourceLine" id="cb6-46" data-line-number="46"></a>
+<a class="sourceLine" id="cb6-47" data-line-number="47"></a>
+<a class="sourceLine" id="cb6-48" data-line-number="48">roc.sl &lt;-<span class="st"> </span><span class="kw">calc_roc</span>(sl.pred.validation, <span class="kw">matrix</span>(validation<span class="op">$</span>Y, <span class="dt">ncol =</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb6-49" data-line-number="49"></a>
+<a class="sourceLine" id="cb6-50" data-line-number="50"><span class="kw">plot</span>(roc.reg, <span class="dt">type =</span> <span class="st">&quot;l&quot;</span>, <span class="dt">main =</span> <span class="st">&quot;Out of sample ROC curve&quot;</span>)</a>
+<a class="sourceLine" id="cb6-51" data-line-number="51"><span class="kw">lines</span>(roc.xgb, <span class="dt">lty =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb6-52" data-line-number="52"><span class="kw">lines</span>(roc.sl, <span class="dt">lty =</span> <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb6-53" data-line-number="53"><span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty  =</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb6-54" data-line-number="54"><span class="kw">legend</span>(<span class="st">&quot;bottomright&quot;</span>, <span class="dt">legend =</span> <span class="kw">c</span>(<span class="st">&quot;AUC regression&quot;</span>, <span class="st">&quot;xgboost&quot;</span>, <span class="st">&quot;reference&quot;</span>, <span class="st">&quot;SuperLearner&quot;</span>), </a>
+<a class="sourceLine" id="cb6-55" data-line-number="55">       <span class="dt">lty =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">4</span>)</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div id="refs" class="references">
+<div id="ref-aalen1978empirical">
+<p>Aalen, Odd O, and Søren Johansen. 1978. “An Empirical Transition Matrix for Non-Homogeneous Markov Chains Based on Censored Observations.” <em>Scandinavian Journal of Statistics</em>. JSTOR, 141–50.</p>
+</div>
+<div id="ref-andersen2010pseudo">
+<p>Andersen, Per Kragh, and Maja Pohar Perme. 2010. “Pseudo-Observations in Survival Analysis.” <em>Statistical Methods in Medical Research</em> 19 (1). SAGE Publications Sage UK: London, England:71–99.</p>
+</div>
+<div id="ref-binder2014pseudo">
+<p>Binder, Nadine, Thomas A Gerds, and Per Kragh Andersen. 2014. “Pseudo-Observations for Competing Risks with Covariate Dependent Censoring.” <em>Lifetime Data Analysis</em> 20 (2). Springer:303–15.</p>
+</div>
+<div id="ref-blanche2018c">
+<p>Blanche, Paul, Michael W Kattan, and Thomas A Gerds. 2018. “The c-Index Is Not Proper for the Evaluation of <span class="math inline">\(t\)</span>-Year Predicted Risks.” <em>Biostatistics</em>.</p>
+</div>
+<div id="ref-graw2009pseudo">
+<p>Graw, Frederik, Thomas A Gerds, and Martin Schumacher. 2009. “On Pseudo-Values for Regression Analysis in Competing Risks Models.” <em>Lifetime Data Analysis</em> 15 (2). Springer:241–55.</p>
+</div>
+<div id="ref-heagerty2000time">
+<p>Heagerty, Patrick J, Thomas Lumley, and Margaret S Pepe. 2000. “Time-Dependent Roc Curves for Censored Survival Data and a Diagnostic Marker.” <em>Biometrics</em> 56 (2). Blackwell Publishing Ltd:337–44.</p>
+</div>
+<div id="ref-jacobsen2016note">
+<p>Jacobsen, Martin, and Torben Martinussen. 2016. “A Note on the Large Sample Properties of Estimators Based on Generalized Linear Models for Correlated Pseudo-Observations.” <em>Scandinavian Journal of Statistics</em> 43 (3). Wiley Online Library:845–62.</p>
+</div>
+<div id="ref-overgaard2017asymptotic">
+<p>Overgaard, Morten, Erik Thorlund Parner, Jan Pedersen, and others. 2017. “Asymptotic Theory of Generalized Estimating Equations Based on Jack-Knife Pseudo-Observations.” <em>The Annals of Statistics</em> 45 (5). Institute of Mathematical Statistics:1988–2015.</p>
+</div>
+<div id="ref-saha2010time">
+<p>Saha, P, and PJ Heagerty. 2010. “Time-Dependent Predictive Accuracy in the Presence of Competing Risks.” <em>Biometrics</em> 66 (4). Wiley Online Library:999–1011.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
